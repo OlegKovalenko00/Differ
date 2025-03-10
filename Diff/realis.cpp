@@ -1,6 +1,13 @@
 #include "head.hpp"
 #include <sstream>
 #include <cmath>
+#include <iostream>
+#include <map>
+#include <complex>
+#include <stdexcept>
+#include <cctype>
+#include <string>
+#include <memory>
 
 // Предварительная декларация структуры unary_op_node
 template<typename T>
@@ -162,7 +169,7 @@ struct unary_op_node : public expression<T>::node_base {
     }
 };
 
-// Методы класса expression
+// Реализация методов класса expression
 
 template<typename T>
 expression<T>::expression(T value)
@@ -181,7 +188,7 @@ expression<T>::expression(expression &&other) noexcept
     : root_(std::move(other.root_)) {}
 
 template<typename T>
-expression<T> &expression<T>::operator=(const expression &other) {
+expression<T>& expression<T>::operator=(const expression &other) {
     if(this != &other) {
         root_ = other.root_->clone();
     }
@@ -189,7 +196,7 @@ expression<T> &expression<T>::operator=(const expression &other) {
 }
 
 template<typename T>
-expression<T> &expression<T>::operator=(expression &&other) noexcept {
+expression<T>& expression<T>::operator=(expression &&other) noexcept {
     if(this != &other) {
         root_ = std::move(other.root_);
     }
@@ -256,136 +263,134 @@ expression<T> expression<T>::make_unary(const std::string &op, const expression 
 template class expression<double>;
 template class expression<std::complex<double>>;
 
-#include <iostream>
-#include <map>
-#include <complex>
+// ==================================================
+// Реализация методов класса ExpressionParser
+// ==================================================
 
-int main() {
-    // Тест 1: f(x) = ln(x^2) + 3, производная f'(x) = (2*x)/(x^2)
-    expression<double> x("x");
-    expression<double> expr1 = ln(x * x) + expression<double>(3.0);
-    auto dexpr1 = expr1.differentiate("x");
-    std::map<std::string, double> vars1 = {{"x", 2.0}};
-    std::cout << "Test 1:\n";
-    std::cout << "f(x) = " << expr1.to_string() << "\n";
-    std::cout << "f'(x) = " << dexpr1.to_string() << "\n";
-    std::cout << "f(2) = " << expr1.evaluate(vars1) << "\n\n";
+// Определения методов вынесены из объявления (head.hpp)
 
-    // Тест 2: g(x) = sin(x) + cos(x), производная g'(x) = cos(x) - sin(x)
-    expression<double> expr2 = sin(x) + cos(x);
-    auto dexpr2 = expr2.differentiate("x");
-    std::map<std::string, double> vars2 = {{"x", 3.0}};
-    std::cout << "Test 2:\n";
-    std::cout << "g(x) = " << expr2.to_string() << "\n";
-    std::cout << "g'(x) = " << dexpr2.to_string() << "\n";
-    std::cout << "g(3) = " << expr2.evaluate(vars2) << "\n\n";
+ExpressionParser::ExpressionParser(const std::string &s)
+    : str(s), pos(0) {}
 
-    // Тест 3: h(x,y) = x^2 + y, подстановка y = 5, h(2,5) = 4+5 = 9
-    expression<double> y("y");
-    expression<double> expr3 = (x * x) + y;
-    auto expr3_sub = expr3.substitute("y", expression<double>(5.0));
-    std::map<std::string, double> vars3 = {{"x", 2.0}};
-    std::cout << "Test 3:\n";
-    std::cout << "h(x,y) = " << expr3.to_string() << "\n";
-    std::cout << "h(x,5) = " << expr3_sub.to_string() << "\n";
-    std::cout << "h(2,5) = " << expr3_sub.evaluate(vars3) << "\n\n";
-
-    // Тест 4: Константа: f = 5, производная должна быть 0
-    expression<double> expr4(5.0);
-    auto dexpr4 = expr4.differentiate("x");
-    std::cout << "Test 4:\n";
-    std::cout << "f = " << expr4.to_string() << "\n";
-    std::cout << "f' = " << dexpr4.to_string() << "\n\n";
-
-    // Тест 5: Переменная: f(x) = x, производная должна быть 1
-    expression<double> expr5("x");
-    auto dexpr5 = expr5.differentiate("x");
-    std::map<std::string, double> vars5 = {{"x", 10.0}};
-    std::cout << "Test 5:\n";
-    std::cout << "f(x) = " << expr5.to_string() << "\n";
-    std::cout << "f'(x) = " << dexpr5.to_string() << "\n";
-    std::cout << "f(10) = " << expr5.evaluate(vars5) << "\n\n";
-
-    // Тест 6: f(x) = x * ln(x), производная по правилу произведения
-    expression<double> expr6 = x * ln(x);
-    auto dexpr6 = expr6.differentiate("x");
-    std::map<std::string, double> vars6 = {{"x", 2.0}};
-    std::cout << "Test 6:\n";
-    std::cout << "f(x) = " << expr6.to_string() << "\n";
-    std::cout << "f'(x) = " << dexpr6.to_string() << "\n";
-    std::cout << "f(2) = " << expr6.evaluate(vars6) << "\n\n";
-
-    // Тест 7: f(x) = exp(x) / x, производная по правилу частного
-    expression<double> expr7 = exp(x) / x;
-    auto dexpr7 = expr7.differentiate("x");
-    std::map<std::string, double> vars7 = {{"x", 1.0}};
-    std::cout << "Test 7:\n";
-    std::cout << "f(x) = " << expr7.to_string() << "\n";
-    std::cout << "f'(x) = " << dexpr7.to_string() << "\n";
-    std::cout << "f(1) = " << expr7.evaluate(vars7) << "\n\n";
-
-    // Тест 8: f(x) = x^x, производная с использованием правила возведения в степень
-    expression<double> expr8 = x ^ x;
-    auto dexpr8 = expr8.differentiate("x");
-    std::map<std::string, double> vars8 = {{"x", 2.0}};
-    std::cout << "Test 8:\n";
-    std::cout << "f(x) = " << expr8.to_string() << "\n";
-    std::cout << "f'(x) = " << dexpr8.to_string() << "\n";
-    std::cout << "f(2) = " << expr8.evaluate(vars8) << "\n\n";
-
-    // Тест 9: f(x) = sin(ln(x)), производная по правилу композиции
-    expression<double> expr9 = sin(ln(x));
-    auto dexpr9 = expr9.differentiate("x");
-    std::map<std::string, double> vars9 = {{"x", 2.0}};
-    std::cout << "Test 9:\n";
-    std::cout << "f(x) = " << expr9.to_string() << "\n";
-    std::cout << "f'(x) = " << dexpr9.to_string() << "\n";
-    std::cout << "f(2) = " << expr9.evaluate(vars9) << "\n\n";
-
-    // Тест 10: f(x) = 2 + 3, результат должен быть 5, производная 0
-    expression<double> expr10 = expression<double>(2.0) + expression<double>(3.0);
-    auto dexpr10 = expr10.differentiate("x");
-    std::cout << "Test 10:\n";
-    std::cout << "f(x) = " << expr10.to_string() << "\n";
-    std::cout << "f'(x) = " << dexpr10.to_string() << "\n";
-    std::cout << "f() = " << expr10.evaluate({}) << "\n\n";
-
-    // Тест 11: f(x) = (x + 2)^2, производная с возведением в степень
-    expression<double> expr11 = (x + expression<double>(2.0)) ^ expression<double>(2.0);
-    auto dexpr11 = expr11.differentiate("x");
-    std::map<std::string, double> vars11 = {{"x", 3.0}};
-    std::cout << "Test 11:\n";
-    std::cout << "f(x) = " << expr11.to_string() << "\n";
-    std::cout << "f'(x) = " << dexpr11.to_string() << "\n";
-    std::cout << "f(3) = " << expr11.evaluate(vars11) << "\n\n";
-
-    // Тест 12: f(x,y) = x + y, подстановка x = 4, y = 7
-    expression<double> expr12 = x + y;
-    auto expr12_sub = expr12.substitute("x", expression<double>(4.0))
-                               .substitute("y", expression<double>(7.0));
-    std::cout << "Test 12:\n";
-    std::cout << "f(x,y) = " << expr12.to_string() << "\n";
-    std::cout << "f(4,7) = " << expr12_sub.to_string() << "\n";
-    std::cout << "f(4,7) = " << expr12_sub.evaluate({}) << "\n\n";
-
-    // Тест 13: f(x) = exp(ln(x)) = x, производная должна быть 1
-    expression<double> expr13 = exp(ln(x));
-    auto dexpr13 = expr13.differentiate("x");
-    std::map<std::string, double> vars13 = {{"x", 5.0}};
-    std::cout << "Test 13:\n";
-    std::cout << "f(x) = " << expr13.to_string() << "\n";
-    std::cout << "f'(x) = " << dexpr13.to_string() << "\n";
-    std::cout << "f(5) = " << expr13.evaluate(vars13) << "\n\n";
-
-    // Тест 14: f(x) = cos(x) * sin(x), производная по правилу произведения
-    expression<double> expr14 = cos(x) * sin(x);
-    auto dexpr14 = expr14.differentiate("x");
-    std::map<std::string, double> vars14 = {{"x", 3.0}};
-    std::cout << "Test 14:\n";
-    std::cout << "f(x) = " << expr14.to_string() << "\n";
-    std::cout << "f'(x) = " << dexpr14.to_string() << "\n";
-    std::cout << "f(3) = " << expr14.evaluate(vars14) << "\n\n";
-
-    return 0;
+void ExpressionParser::skipWhitespace() {
+    while (pos < str.size() && isspace(str[pos])) ++pos;
 }
 
+expression<double> ExpressionParser::parsePrimary() {
+    skipWhitespace();
+    if (pos >= str.size())
+        throw std::runtime_error("Unexpected end of input");
+
+    // Обработка скобок: (expr)
+    if (str[pos] == '(') {
+        ++pos; // пропускаем '('
+        auto expr = parseExpression();
+        skipWhitespace();
+        if (pos >= str.size() || str[pos] != ')')
+            throw std::runtime_error("Missing closing parenthesis");
+        ++pos; // пропускаем ')'
+        return expr;
+    }
+
+    // Если идентификатор начинается с буквы: переменная или функция
+    if (isalpha(str[pos])) {
+        std::string id;
+        while (pos < str.size() && isalpha(str[pos])) {
+            id.push_back(str[pos]);
+            ++pos;
+        }
+        skipWhitespace();
+        // Если после идентификатора идёт '(' — функция
+        if (pos < str.size() && str[pos] == '(') {
+            ++pos; // пропускаем '('
+            auto arg = parseExpression();
+            skipWhitespace();
+            if (pos >= str.size() || str[pos] != ')')
+                throw std::runtime_error("Missing closing parenthesis for function");
+            ++pos; // пропускаем ')'
+            return expression<double>::make_unary(id, arg);
+        } else {
+            // иначе переменная
+            return expression<double>(id);
+        }
+    }
+
+    // Обработка чисел
+    if (isdigit(str[pos]) || str[pos] == '.') {
+        std::string numStr;
+        while (pos < str.size() && (isdigit(str[pos]) || str[pos] == '.')) {
+            numStr.push_back(str[pos]);
+            ++pos;
+        }
+        double value = std::stod(numStr);
+        return expression<double>(value);
+    }
+
+    throw std::runtime_error("Unexpected character: " + std::string(1, str[pos]));
+}
+
+expression<double> ExpressionParser::parseFactor() {
+    auto left = parsePrimary();
+    skipWhitespace();
+    while (pos < str.size() && str[pos] == '^') {
+        ++pos; // пропускаем '^'
+        auto right = parsePrimary();
+        left = left ^ right;
+        skipWhitespace();
+    }
+    return left;
+}
+
+expression<double> ExpressionParser::parseTerm() {
+    auto left = parseFactor();
+    skipWhitespace();
+    while (pos < str.size() && (str[pos] == '*' || str[pos] == '/')) {
+        char op = str[pos];
+        ++pos;
+        auto right = parseFactor();
+        if (op == '*')
+            left = left * right;
+        else
+            left = left / right;
+        skipWhitespace();
+    }
+    return left;
+}
+
+expression<double> ExpressionParser::parseExpression() {
+    auto left = parseTerm();
+    skipWhitespace();
+    while (pos < str.size() && (str[pos] == '+' || str[pos] == '-')) {
+        char op = str[pos];
+        ++pos;
+        auto right = parseTerm();
+        if (op == '+')
+            left = left + right;
+        else
+            left = left - right;
+        skipWhitespace();
+    }
+    return left;
+}
+
+expression<double> ExpressionParser::parse() {
+    auto expr = parseExpression();
+    skipWhitespace();
+    if (pos != str.size())
+        throw std::runtime_error("Unexpected characters at end of expression");
+    return expr;
+}
+
+/*
+int main() {
+    // Пример использования:
+    try {
+        ExpressionParser parser("sin(3.14) + 2*(x - 1)");
+        auto expr = parser.parse();
+        std::cout << "Parsed expression: " << expr.to_string() << std::endl;
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+    return 0;
+}
+*/
