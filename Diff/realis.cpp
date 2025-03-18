@@ -9,7 +9,7 @@
 #include <memory>
 #include <type_traits>
 
-// --- Forward declaration template класса expression ---
+// --- Forward declaration шаблонного класса expression ---
 template<typename T>
 class expression;
 
@@ -115,7 +115,16 @@ struct unary_op_node : public expression<T>::node_base {
         T val = child->evaluate(vars);
         if(op == "sin") return std::sin(val);
         if(op == "cos") return std::cos(val);
-        if(op == "ln")  return std::log(val);
+        if(op == "ln") {
+            // Для вещественных типов проверяем, что аргумент больше нуля.
+            if constexpr (std::is_floating_point<T>::value) {
+                if(val <= T(0)) {
+                    std::cout << "Durak, nuthno bolshe nula";
+                    throw std::runtime_error("Durak, nuthno bolshe nula");
+                }
+            }
+            return std::log(val);
+        }
         if(op == "exp") return std::exp(val);
         throw std::runtime_error("Unknown function " + op);
     }
@@ -459,5 +468,4 @@ template class expression<double>;
 template class expression<std::complex<double>>;
 template class ExpressionParserT<std::complex<double>>;
 template class ExpressionParserT<double>;
-
 

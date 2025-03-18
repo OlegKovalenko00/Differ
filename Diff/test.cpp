@@ -79,7 +79,7 @@ int main() {
     });
 
     run_test("Test Precedence with Parentheses", [](){
-        ExpressionParser parser("2 * (3 + 4)");
+        ExpressionParserT<double> parser("2 * (3 + 4)");
         auto expr = parser.parse();
         double result = expr.evaluate({});
         if (!nearlyEqual(result, 14))
@@ -87,7 +87,7 @@ int main() {
     });
 
     run_test("Test Function Composition", [](){
-        ExpressionParser parser("sin(cos(0))");
+        ExpressionParserT<double> parser("sin(cos(0))");
         auto expr = parser.parse();
         double result = expr.evaluate({});
         double expected = std::sin(std::cos(0));
@@ -97,7 +97,7 @@ int main() {
 
     run_test("Test Parser Unmatched Parenthesis", [](){
         try {
-            ExpressionParser parser("3 + (4 * 2");
+            ExpressionParserT<double> parser("3 + (4 * 2");
             auto expr = parser.parse();
             throw std::runtime_error("Ожидалась ошибка из-за незакрытой скобки");
         } catch (const std::runtime_error &e) {
@@ -106,7 +106,7 @@ int main() {
 
     run_test("Test Parser Unknown Token", [](){
         try {
-            ExpressionParser parser("3 + $");
+            ExpressionParserT<double> parser("3 + $");
             auto expr = parser.parse();
             throw std::runtime_error("Ожидалась ошибка из-за неизвестного символа");
         } catch (const std::runtime_error &e) {
@@ -114,7 +114,7 @@ int main() {
     });
 
     run_test("Test Substitution", [](){
-        ExpressionParser parser("x^2");
+        ExpressionParserT<double> parser("x^2");
         auto expr = parser.parse();
         auto substituted = expr.substitute("x", expression<double>(3));
         double result = substituted.evaluate({});
@@ -123,7 +123,7 @@ int main() {
     });
 
     run_test("Test Chained Operations", [](){
-        ExpressionParser parser("1 + 2 * 3 - 4 / 2");
+        ExpressionParserT<double> parser("1 + 2 * 3 - 4 / 2");
         auto expr = parser.parse();
         double result = expr.evaluate({});
         if (!nearlyEqual(result, 5))
@@ -131,7 +131,7 @@ int main() {
     });
 
     run_test("Test Exponentiation Associativity", [](){
-        ExpressionParser parser("2^3^2");
+        ExpressionParserT<double> parser("2^3^2");
         auto expr = parser.parse();
         double result = expr.evaluate({});
         if (!nearlyEqual(result, 64))
@@ -139,7 +139,7 @@ int main() {
     });
 
     run_test("Test Complex Expression Evaluation", [](){
-        ExpressionParser parser("3 + sin(0) * (2 + x) - ln(exp(1))");
+        ExpressionParserT<double> parser("3 + sin(0) * (2 + x) - ln(exp(1))");
         auto expr = parser.parse();
         double result = expr.evaluate({{"x", 5}});
         if (!nearlyEqual(result, 2))
@@ -147,35 +147,35 @@ int main() {
     });
 
     run_test("Test Differentiation Output sin(x)", [](){
-        ExpressionParser parser("sin(x)");
+        ExpressionParserT<double> parser("sin(x)");
         auto expr = parser.parse();
         auto deriv = expr.differentiate("x");
         std::cout << "Derivative of sin(x): " << deriv.to_string() << std::endl;
     });
 
     run_test("Test Differentiation Output x^2", [](){
-        ExpressionParser parser("x^2");
+        ExpressionParserT<double> parser("x^2");
         auto expr = parser.parse();
         auto deriv = expr.differentiate("x");
         std::cout << "Derivative of x^2: " << deriv.to_string() << std::endl;
     });
 
     run_test("Test Differentiation Output exp(x)", [](){
-        ExpressionParser parser("exp(x)");
+        ExpressionParserT<double> parser("exp(x)");
         auto expr = parser.parse();
         auto deriv = expr.differentiate("x");
         std::cout << "Derivative of exp(x): " << deriv.to_string() << std::endl;
     });
 
     run_test("Test Differentiation Output ln(x)", [](){
-        ExpressionParser parser("ln(x)");
+        ExpressionParserT<double> parser("ln(x)");
         auto expr = parser.parse();
         auto deriv = expr.differentiate("x");
         std::cout << "Derivative of ln(x): " << deriv.to_string() << std::endl;
     });
 
     run_test("Test Differentiation Output x^3 + 2*x", [](){
-        ExpressionParser parser("x^3 + 2*x");
+        ExpressionParserT<double> parser("x^3 + 2*x");
         auto expr = parser.parse();
         auto deriv = expr.differentiate("x");
         std::cout << "Derivative of x^3 + 2*x: " << deriv.to_string() << std::endl;
